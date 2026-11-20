@@ -15,13 +15,14 @@ class AIWorker(QThread):
     succeeded = Signal(str)
     failed = Signal(str)
 
-    def __init__(self, messages: list[ChatMessage]) -> None:
+    def __init__(self, messages: list[ChatMessage], *, thinking: bool = False) -> None:
         super().__init__()
         self.messages = messages
+        self.thinking = thinking
 
     def run(self) -> None:
         try:
-            response = create_provider().generate(self.messages)
+            response = create_provider(thinking=self.thinking).generate(self.messages)
         except (OpenAIError, OSError, RuntimeError, ValueError) as exc:
             self.failed.emit(str(exc) or exc.__class__.__name__)
         else:
