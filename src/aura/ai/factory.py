@@ -32,21 +32,36 @@ def _generation_settings() -> tuple[float, int]:
     return temperature, max_tokens
 
 
-def create_provider() -> AIProvider:
+def _request_timeout() -> float:
+    """Read and validate the provider request timeout in seconds."""
+    try:
+        timeout = float(os.getenv("AI_TIMEOUT", "300"))
+    except ValueError as exc:
+        raise ValueError("AI_TIMEOUT must be a number between 1 and 900 seconds.") from exc
+
+    if not math.isfinite(timeout) or not 1 <= timeout <= 900:
+        raise ValueError("AI_TIMEOUT must be between 1 and 900 seconds.")
+    return timeout
+
+
+def create_provider(*, thinking: bool = False) -> AIProvider:
     """Create the provider selected through the environment configuration."""
     load_dotenv()
 
     provider_name = os.getenv("AI_PROVIDER", "ollama").strip().lower()
+    timeout = _request_timeout()
+    temperature, max_tokens = _generation_settings()
 
     if provider_name in {"ollama", "local"}:
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
-        temperature, max_tokens = _generation_settings()
         return OpenAICompatibleProvider(
             api_key="ollama",
             base_url=f"{base_url}/v1",
             model=os.getenv("OLLAMA_MODEL", "llama3.2"),
+            timeout=timeout,
             temperature=temperature,
             max_tokens=max_tokens,
+            thinking=thinking,
         )
 
     if provider_name == "openai":
@@ -55,10 +70,10 @@ def create_provider() -> AIProvider:
             raise ValueError(
                 "AI_PROVIDER is set to 'openai', but OPENAI_API_KEY is not configured."
             )
-        temperature, max_tokens = _generation_settings()
         return OpenAICompatibleProvider(
             api_key=api_key,
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+            timeout=timeout,
             temperature=temperature,
             max_tokens=max_tokens,
         )
