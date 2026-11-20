@@ -1,4 +1,4 @@
-""""Main desktop window for the AURA assistant."""
+""" "Main desktop window for the AURA assistant."""
 
 from __future__ import annotations
 
