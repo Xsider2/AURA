@@ -30,6 +30,8 @@ def test_openai_compatible_provider_returns_assistant_content():
     client.chat.completions.create.assert_called_once_with(
         model="test-model",
         messages=[{"role": "user", "content": "Привет"}],
+        temperature=0.7,
+        max_tokens=800,
     )
 
 
@@ -52,6 +54,8 @@ def test_factory_creates_local_ollama_provider(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/")
     monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5")
+    monkeypatch.setenv("AI_TEMPERATURE", "0.4")
+    monkeypatch.setenv("AI_MAX_TOKENS", "1200")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
         provider = create_provider()
@@ -60,6 +64,8 @@ def test_factory_creates_local_ollama_provider(monkeypatch):
         api_key="ollama",
         base_url="http://localhost:11434/v1",
         model="qwen2.5",
+        temperature=0.4,
+        max_tokens=1200,
     )
     assert provider is provider_class.return_value
 
