@@ -165,13 +165,13 @@ class MainWindow(QMainWindow):
             """
         )
 
-        def send_message(self) -> None:
+    def send_message(self) -> None:
         """Submit a chat request without blocking the GUI thread."""
         message = self.message_input.text().strip()
         if not message or (self._worker is not None and self._worker.isRunning()):
             return
 
-        safe_message = html.escape(message).replace("\\n", "<br>")
+        safe_message = html.escape(message).replace("\n", "<br>")
         self.chat.append(
             f'<div style="margin: 12px 0; padding: 10px; background: #202c45; '
             f'border-radius: 9px;"><b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
 
     def _handle_response(self, response: str) -> None:
         """Display and retain a successful assistant response."""
-        safe_response = html.escape(response).replace("\\n", "<br>")
+        safe_response = html.escape(response).replace("\n", "<br>")
         self.chat.append(
             f'<div style="margin: 12px 0; padding: 10px; background: #19283a; '
             f'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>{safe_response}</div>'
