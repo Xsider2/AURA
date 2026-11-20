@@ -1,4 +1,4 @@
-""" "Main desktop window for the AURA assistant."""
+"""Main desktop window for the AURA assistant."""
 
 from __future__ import annotations
 
@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from aura.ai.persona import SYSTEM_PROMPT
 from aura.ai.provider import ChatMessage
 from aura.ai.worker import AIWorker
 
@@ -36,17 +37,7 @@ class MainWindow(QMainWindow):
         self._messages: list[ChatMessage] = [
             {
                 "role": "system",
-                "content": (
-                    "Ты — AURA, персональный AI-помощник пользователя. "
-                    "По умолчанию всегда отвечай на современном, естественном русском языке. "
-                    "Используй другой язык только по прямой просьбе пользователя или если "
-                    "сам пользователь явно перешёл на него. Не смешивай языки без необходимости, "
-                    "не используй архаизмы, устаревшие местоимения и искусственные обороты. "
-                    "Общайся дружелюбно, спокойно и уважительно, без чрезмерной фамильярности. "
-                    "Сначала отвечай по существу, затем при необходимости добавляй пояснения. "
-                    "Если не знаешь ответа или не уверен в фактах, честно скажи об этом и не выдумывай. "
-                    "Учитывай контекст диалога и не повторяй без причины уже известную информацию."
-                ),
+                "content": SYSTEM_PROMPT,
             }
         ]
         self._worker: AIWorker | None = None
