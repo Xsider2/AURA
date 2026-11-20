@@ -95,8 +95,8 @@ class MainWindow(QMainWindow):
         self.chat.setOpenExternalLinks(False)
         self.chat.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.chat.setHtml(
-            '<div><b>AURA</b><br>Привет! Я AURA. Сейчас мы настраиваем мой интерфейс. '
-            'Напиши сообщение, чтобы проверить отправку.</div>'
+            "<div><b>AURA</b><br>Привет! Я AURA. Сейчас мы настраиваем мой интерфейс. "
+            "Напиши сообщение, чтобы проверить отправку.</div>"
         )
         conversation_layout.addWidget(self.chat)
 
@@ -165,7 +165,7 @@ class MainWindow(QMainWindow):
         self.chat.append(
             '<div style="margin: 12px 0; padding: 10px; background: #19283a; '
             'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>'
-            'Сообщение получено. Подключение ИИ будет добавлено на следующем этапе.</div>'
+            "Сообщение получено. Подключение ИИ будет добавлено на следующем этапе.</div>"
         )
         self.message_input.clear()
 
