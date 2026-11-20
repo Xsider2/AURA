@@ -1,4 +1,4 @@
-""""Tests for the provider-neutral AI integration.""""
+"""Tests for the provider-neutral AI integration."""
 
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
