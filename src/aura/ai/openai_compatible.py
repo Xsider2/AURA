@@ -40,7 +40,7 @@ class OpenAICompatibleProvider:
             for message in reversed(request_messages):
                 if message["role"] == "user":
                     directive = "/think" if self.thinking else "/no_think"
-                    message["content"] = f'{message["content"]} {directive}'
+                    message["content"] = f"{message['content']} {directive}"
                     break
 
         response = self._client.chat.completions.create(
