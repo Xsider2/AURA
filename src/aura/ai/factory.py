@@ -35,6 +35,4 @@ def create_provider() -> AIProvider:
             model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
         )
 
-    raise ValueError(
-        "Unsupported AI_PROVIDER. Choose 'ollama' (or 'local') or 'openai'."
-    )
+    raise ValueError("Unsupported AI_PROVIDER. Choose 'ollama' (or 'local') or 'openai'.")
