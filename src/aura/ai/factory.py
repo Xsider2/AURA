@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import os
 
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ def _generation_settings() -> tuple[float, int]:
     except ValueError as exc:
         raise ValueError("AI_TEMPERATURE must be a number between 0 and 2.") from exc
 
-    if not 0 <= temperature <= 2:
+    if not math.isfinite(temperature) or not 0 <= temperature <= 2:
         raise ValueError("AI_TEMPERATURE must be between 0 and 2.")
 
     try:
