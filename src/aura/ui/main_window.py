@@ -7,7 +7,10 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from PySide6.QtWidgets import (
+from aura.ai.provider import ChatMessage
+from aura.ai.worker import AIWorker
+
+from PySide6.QtWidgets (
     QApplication,
     QFrame,
     QHBoxLayout,
@@ -30,6 +33,16 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("AURA — AI Assistant")
         self.resize(1100, 720)
         self.setMinimumSize(820, 560)
+        self._messages: list[ChatMessage] = [
+            {
+                "role": "system",
+                "content": (
+                    "Ты — AURA, персональный AI-помощник. Отвечай на русском языке, "
+                    "если пользователь не попросил другой язык. Будь точной и полезной."
+                ),
+            }
+        ]
+        self._worker: AIWorker | None = None
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -152,22 +165,56 @@ class MainWindow(QMainWindow):
             """
         )
 
-    def send_message(self) -> None:
-        """Append a user message and a clearly marked placeholder response."""
+        def send_message(self) -> None:
+        """Submit a chat request without blocking the GUI thread."""
         message = self.message_input.text().strip()
-        if not message:
+        if not message or (self._worker is not None and self._worker.isRunning()):
             return
-        safe_message = html.escape(message).replace("\n", "<br>")
+
+        safe_message = html.escape(message).replace("\\n", "<br>")
         self.chat.append(
             f'<div style="margin: 12px 0; padding: 10px; background: #202c45; '
             f'border-radius: 9px;"><b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
         )
-        self.chat.append(
-            '<div style="margin: 12px 0; padding: 10px; background: #19283a; '
-            'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>'
-            "Сообщение получено. Подключение ИИ будет добавлено на следующем этапе.</div>"
-        )
         self.message_input.clear()
+        self.message_input.setEnabled(False)
+        self.send_button.setEnabled(False)
+        self.connection_label.setText("ИИ обрабатывает запрос…")
+
+        self._messages.append({"role": "user", "content": message})
+        request_messages = [self._messages[0], *self._messages[-20:]]
+        self._worker = AIWorker(request_messages)
+        self._worker.succeeded.connect(self._handle_response)
+        self._worker.failed.connect(self._handle_error)
+        self._worker.finished.connect(self._worker_finished)
+        self._worker.start()
+
+    def _handle_response(self, response: str) -> None:
+        """Display and retain a successful assistant response."""
+        safe_response = html.escape(response).replace("\\n", "<br>")
+        self.chat.append(
+            f'<div style="margin: 12px 0; padding: 10px; background: #19283a; '
+            f'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>{safe_response}</div>'
+        )
+        self._messages.append({"role": "assistant", "content": response})
+
+    def _handle_error(self, error: str) -> None:
+        """Show a readable error without terminating the application."""
+        safe_error = html.escape(error)
+        self.chat.append(
+            f'<div style="margin: 12px 0; padding: 10px; background: #3a2028; '
+            f'border-radius: 9px;"><b style="color: #ff9eaa;">Ошибка ИИ</b><br>{safe_error}</div>'
+        )
+        self.connection_label.setText("Проверь настройки ИИ")
+
+    def _worker_finished(self) -> None:
+        """Restore the input controls after the background task ends."""
+        self.message_input.setEnabled(True)
+        self.send_button.setEnabled(True)
+        if self.connection_label.text() != "Проверь настройки ИИ":
+            self.connection_label.setText("ИИ готов")
+        self.message_input.setFocus()
+        self._worker = None
 
 
 def main() -> int:
