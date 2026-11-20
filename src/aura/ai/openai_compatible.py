@@ -8,7 +8,7 @@ from aura.ai.provider import ChatMessage
 
 
 class OpenAICompatibleProvider:
-    """Send chat requests to OpenAI-compatible chat completion endpoints."""
+    """Send chat requests to OpenAI and OpenAI-compatible endpoints."""
 
     def __init__(
         self,
@@ -34,18 +34,21 @@ class OpenAICompatibleProvider:
 
     def generate(self, messages: list[ChatMessage]) -> str:
         """Return the assistant's text response or raise a provider error."""
-        request_options: dict[str, object] = {
-            "model": self.model,
-            "messages": messages,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-        }
+        request_messages = [dict(message) for message in messages]
         if self.thinking is not None:
-            request_options["extra_body"] = {
-                "reasoning_effort": "medium" if self.thinking else "none"
-            }
+            # Ollama's Qwen3 template switches modes through these prompt tokens.
+            for message in reversed(request_messages):
+                if message["role"] == "user":
+                    directive = "/think" if self.thinking else "/no_think"
+                    message["content"] = f'{message["content"]} {directive}'
+                    break
 
-        response = self._client.chat.completions.create(**request_options)
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=request_messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+        )
         content = response.choices[0].message.content
         if not content:
             raise RuntimeError("AI provider returned an empty response.")
