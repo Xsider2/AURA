@@ -8,17 +8,8 @@ import sys
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
-    QApplication,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QSizePolicy,
-    QTextBrowser,
-    QVBoxLayout,
-    QWidget,
+    QApplication, QFrame, QHBoxLayout, QLabel, QLineEdit, QMainWindow,
+    QPushButton, QSizePolicy, QTextBrowser, QVBoxLayout, QWidget,
 )
 
 
@@ -67,10 +58,9 @@ class MainWindow(QMainWindow):
         status.setObjectName("status")
         status.setAlignment(Qt.AlignmentFlag.AlignCenter)
         side_layout.addWidget(status)
-
         side_layout.addStretch()
-        hint = QLabel("Твой персональный
-AI-помощник")
+
+        hint = QLabel("Твой персональный\nAI-помощник")
         hint.setObjectName("hint")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         side_layout.addWidget(hint)
@@ -96,9 +86,8 @@ AI-помощник")
         self.chat.setOpenExternalLinks(False)
         self.chat.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.chat.setHtml(
-            '<div class="message assistant"><b>AURA</b><br>'
-            "Привет! Я AURA. Сейчас мы настраиваем мой интерфейс. "
-            "Напиши сообщение, чтобы проверить отправку.</div>"
+            '<div><b>AURA</b><br>Привет! Я AURA. Сейчас мы настраиваем мой интерфейс. '
+            'Напиши сообщение, чтобы проверить отправку.</div>'
         )
         conversation_layout.addWidget(self.chat)
 
@@ -159,17 +148,14 @@ AI-помощник")
         message = self.message_input.text().strip()
         if not message:
             return
-
         safe_message = html.escape(message).replace("\n", "<br>")
         self.chat.append(
-            f'<div style="margin: 12px 0; padding: 10px; '
-            f'background: #202c45; border-radius: 9px;">'
-            f'<b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
+            f'<div style="margin: 12px 0; padding: 10px; background: #202c45; '
+            f'border-radius: 9px;"><b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
         )
         self.chat.append(
-            '<div style="margin: 12px 0; padding: 10px; '
-            'background: #19283a; border-radius: 9px;">'
-            '<b style="color: #8fd9b5;">AURA</b><br>'
+            '<div style="margin: 12px 0; padding: 10px; background: #19283a; '
+            'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>'
             'Сообщение получено. Подключение ИИ будет добавлено на следующем этапе.</div>'
         )
         self.message_input.clear()
