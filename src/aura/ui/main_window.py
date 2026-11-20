@@ -7,9 +7,6 @@ import sys
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
-from aura.ai.provider import ChatMessage
-from aura.ai.worker import AIWorker
-
 from PySide6.QtWidgets import (
     QApplication,
     QFrame,
@@ -23,6 +20,9 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+
+from aura.ai.provider import ChatMessage
+from aura.ai.worker import AIWorker
 
 
 class MainWindow(QMainWindow):
@@ -182,7 +182,7 @@ class MainWindow(QMainWindow):
         self.connection_label.setText("ИИ обрабатывает запрос…")
 
         self._messages.append({"role": "user", "content": message})
-        request_messages = [self._messages[0], *self._messages[-20:]]
+        request_messages = [self._messages[0], *self._messages[1:][-20:]]
         self._worker = AIWorker(request_messages)
         self._worker.succeeded.connect(self._handle_response)
         self._worker.failed.connect(self._handle_error)
