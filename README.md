@@ -4,14 +4,7 @@ AURA is a personal desktop AI assistant for Windows, built with Python 3.12 and 
 
 ## Current status
 
-The repository currently contains the first desktop UI shell:
-
-- a main window with an assistant/avatar placeholder;
-- a conversation panel;
-- a message input with Enter and button submission;
-- a safe text-to-HTML boundary for user messages.
-
-The assistant response is intentionally a placeholder. AI, voice, memory, screen perception and Windows automation are not connected yet.
+The first desktop UI shell includes an assistant/avatar placeholder, a conversation panel, and a message input. The reply is currently a placeholder; AI, voice, memory, screen perception and Windows automation are not connected yet.
 
 ## Requirements
 
@@ -21,14 +14,14 @@ The assistant response is intentionally a placeholder. AI, voice, memory, screen
 
 ## Setup
 
-From the repository root, activate the virtual environment and install the project:
+Activate the virtual environment and install the project:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".[dev]"
 ```
 
-If the virtual environment has not been created yet:
+If the environment does not exist yet:
 
 ```powershell
 py -3.12 -m venv .venv
@@ -48,7 +41,5 @@ python -m aura
 python -m pytest
 ruff check .
 ```
-
-## Configuration
 
 Copy `.env.example` to `.env` before configuring optional AI providers. Never commit real API keys or credentials.
