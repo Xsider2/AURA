@@ -17,9 +17,13 @@ class OpenAICompatibleProvider:
         model: str,
         base_url: str | None = None,
         timeout: float = 60.0,
+        temperature: float = 0.7,
+        max_tokens: int = 800,
         client: OpenAI | None = None,
     ) -> None:
         self.model = model
+        self.temperature = temperature
+        self.max_tokens = max_tokens
         self._client = client or OpenAI(
             api_key=api_key,
             base_url=base_url,
@@ -31,6 +35,8 @@ class OpenAICompatibleProvider:
         response = self._client.chat.completions.create(
             model=self.model,
             messages=messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
         )
         content = response.choices[0].message.content
         if not content:
