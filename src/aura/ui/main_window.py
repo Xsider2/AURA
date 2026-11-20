@@ -10,7 +10,7 @@ from PySide6.QtGui import QFont
 from aura.ai.provider import ChatMessage
 from aura.ai.worker import AIWorker
 
-from PySide6.QtWidgets (
+from PySide6.QtWidgets import (
     QApplication,
     QFrame,
     QHBoxLayout,
