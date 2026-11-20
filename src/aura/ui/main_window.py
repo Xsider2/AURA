@@ -9,6 +9,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QFont
 from PySide6.QtWidgets import (
     QApplication,
+    QCheckBox,
     QFrame,
     QHBoxLayout,
     QLabel,
@@ -113,6 +114,15 @@ class MainWindow(QMainWindow):
 
         input_row = QHBoxLayout()
         input_row.setSpacing(10)
+        self.thinking_toggle = QCheckBox("Thinking")
+        self.thinking_toggle.setObjectName("thinkingToggle")
+        self.thinking_toggle.setToolTip(
+            "Включает режим рассуждения Qwen3 для более сложных запросов. "
+            "Может увеличить время ответа."
+        )
+        self.thinking_toggle.setChecked(False)
+        input_row.addWidget(self.thinking_toggle)
+
         self.message_input = QLineEdit()
         self.message_input.setObjectName("messageInput")
         self.message_input.setPlaceholderText("Напиши сообщение…")
@@ -149,6 +159,8 @@ class MainWindow(QMainWindow):
                 background: #101625; border: 1px solid #263149; border-radius: 12px;
                 padding: 12px; color: #e8ecf7; font-size: 14px;
             }
+            QCheckBox#thinkingToggle { color: #b8c5ee; spacing: 6px; }
+            QCheckBox#thinkingToggle::indicator { width: 16px; height: 16px; }
             QLineEdit#messageInput {
                 background: #101625; border: 1px solid #34415e; border-radius: 10px;
                 padding: 13px; color: #f2f4fb; selection-background-color: #5369b4;
@@ -177,11 +189,12 @@ class MainWindow(QMainWindow):
         self.message_input.clear()
         self.message_input.setEnabled(False)
         self.send_button.setEnabled(False)
+        self.thinking_toggle.setEnabled(False)
         self.connection_label.setText("ИИ обрабатывает запрос…")
 
         self._messages.append({"role": "user", "content": message})
         request_messages = [self._messages[0], *self._messages[1:][-20:]]
-        self._worker = AIWorker(request_messages)
+        self._worker = AIWorker(request_messages, thinking=self.thinking_toggle.isChecked())
         self._worker.succeeded.connect(self._handle_response)
         self._worker.failed.connect(self._handle_error)
         self._worker.finished.connect(self._worker_finished)
@@ -209,6 +222,7 @@ class MainWindow(QMainWindow):
         """Restore the input controls after the background task ends."""
         self.message_input.setEnabled(True)
         self.send_button.setEnabled(True)
+        self.thinking_toggle.setEnabled(True)
         if self.connection_label.text() != "Проверь настройки ИИ":
             self.connection_label.setText("ИИ готов")
         self.message_input.setFocus()
