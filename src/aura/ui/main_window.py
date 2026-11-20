@@ -1,4 +1,4 @@
-"""Main desktop window for the AURA assistant."""
+""""Main desktop window for the AURA assistant."""
 
 from __future__ import annotations
 
@@ -37,8 +37,15 @@ class MainWindow(QMainWindow):
             {
                 "role": "system",
                 "content": (
-                    "Ты — AURA, персональный AI-помощник. Отвечай на русском языке, "
-                    "если пользователь не попросил другой язык. Будь точной и полезной."
+                    "Ты — AURA, персональный AI-помощник пользователя. "
+                    "По умолчанию всегда отвечай на современном, естественном русском языке. "
+                    "Используй другой язык только по прямой просьбе пользователя или если "
+                    "сам пользователь явно перешёл на него. Не смешивай языки без необходимости, "
+                    "не используй архаизмы, устаревшие местоимения и искусственные обороты. "
+                    "Общайся дружелюбно, спокойно и уважительно, без чрезмерной фамильярности. "
+                    "Сначала отвечай по существу, затем при необходимости добавляй пояснения. "
+                    "Если не знаешь ответа или не уверен в фактах, честно скажи об этом и не выдумывай. "
+                    "Учитывай контекст диалога и не повторяй без причины уже известную информацию."
                 ),
             }
         ]
@@ -82,7 +89,7 @@ class MainWindow(QMainWindow):
         side_layout.addWidget(status)
         side_layout.addStretch()
 
-        hint = QLabel("Твой персональный\nAI-помощник")
+        hint = QLabel("Твой персональный\\nAI-помощник")
         hint.setObjectName("hint")
         hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
         side_layout.addWidget(hint)
@@ -171,7 +178,7 @@ class MainWindow(QMainWindow):
         if not message or (self._worker is not None and self._worker.isRunning()):
             return
 
-        safe_message = html.escape(message).replace("\n", "<br>")
+        safe_message = html.escape(message).replace("\\n", "<br>")
         self.chat.append(
             f'<div style="margin: 12px 0; padding: 10px; background: #202c45; '
             f'border-radius: 9px;"><b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
@@ -191,7 +198,7 @@ class MainWindow(QMainWindow):
 
     def _handle_response(self, response: str) -> None:
         """Display and retain a successful assistant response."""
-        safe_response = html.escape(response).replace("\n", "<br>")
+        safe_response = html.escape(response).replace("\\n", "<br>")
         self.chat.append(
             f'<div style="margin: 12px 0; padding: 10px; background: #19283a; '
             f'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>{safe_response}</div>'
