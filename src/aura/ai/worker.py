@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from openai import OpenAIError
 from PySide6.QtCore import QThread, Signal
 
 from aura.ai.factory import create_provider
@@ -21,7 +22,7 @@ class AIWorker(QThread):
     def run(self) -> None:
         try:
             response = create_provider().generate(self.messages)
-        except Exception as exc:
+        except (OpenAIError, OSError, RuntimeError, ValueError) as exc:
             self.failed.emit(str(exc) or exc.__class__.__name__)
         else:
             self.succeeded.emit(response)
