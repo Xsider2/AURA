@@ -4,10 +4,10 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-import pytest  # noqa: E402
-from PySide6.QtWidgets import QApplication  # noqa: E402
+import pytest
+from PySide6.QtWidgets import QApplication
 
-from aura.ui.main_window import MainWindow  # noqa: E402
+from aura.ui.main_window import MainWindow
 
 
 @pytest.fixture(scope="module")
