@@ -14,7 +14,7 @@ from aura.ai.provider import AIProvider
 def _generation_settings() -> tuple[float, int]:
     """Read and validate response-generation settings from the environment."""
     try:
-        temperature = float(os.getenv("AI_TEMPERATURE", "0.7"))
+        temperature = float(os.getenv("AI_TEMPERATURE", "0.3"))
     except ValueError as exc:
         raise ValueError("AI_TEMPERATURE must be a number between 0 and 2.") from exc
 
