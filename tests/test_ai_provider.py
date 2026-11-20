@@ -82,6 +82,8 @@ def test_factory_creates_openai_provider(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
+    monkeypatch.setenv("AI_TEMPERATURE", "0.7")
+    monkeypatch.setenv("AI_MAX_TOKENS", "800")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
         create_provider()
@@ -89,7 +91,23 @@ def test_factory_creates_openai_provider(monkeypatch):
     provider_class.assert_called_once_with(
         api_key="test-key",
         model="gpt-test",
+        temperature=0.7,
+        max_tokens=800,
     )
+
+
+def test_factory_rejects_invalid_generation_settings(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("AI_TEMPERATURE", "2.5")
+
+    with pytest.raises(ValueError, match="AI_TEMPERATURE"):
+        create_provider()
+
+    monkeypatch.setenv("AI_TEMPERATURE", "0.7")
+    monkeypatch.setenv("AI_MAX_TOKENS", "0")
+
+    with pytest.raises(ValueError, match="AI_MAX_TOKENS"):
+        create_provider()
 
 
 def test_factory_rejects_unknown_provider(monkeypatch):
