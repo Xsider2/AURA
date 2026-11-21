@@ -1,7 +1,6 @@
 """Tests for the provider-neutral AI integration."""
 
 import json
-from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
