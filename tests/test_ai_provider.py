@@ -1,11 +1,14 @@
 """Tests for the provider-neutral AI integration."""
 
+import json
+from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
 
 from aura.ai.factory import create_provider
+from aura.ai.ollama import OllamaThinkingProvider
 from aura.ai.openai_compatible import OpenAICompatibleProvider
 
 
@@ -38,6 +41,56 @@ def test_openai_compatible_provider_rejects_empty_response():
         provider.generate([{"role": "user", "content": "Привет"}])
 
 
+def test_ollama_thinking_provider_returns_content_not_reasoning():
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = json.dumps(
+        {
+            "message": {
+                "content": "  Final answer  ",
+                "thinking": "This private reasoning must not be returned.",
+            }
+        }
+    ).encode("utf-8")
+    messages = [{"role": "user", "content": "Привет"}]
+    provider = OllamaThinkingProvider(
+        base_url="http://localhost:11434/",
+        model="qwen3:4b",
+        timeout=42,
+        temperature=0.4,
+        max_tokens=512,
+    )
+
+    with patch("aura.ai.ollama.urlopen", return_value=response) as urlopen:
+        result = provider.generate(messages)
+
+    assert result == "Final answer"
+    request = urlopen.call_args.args[0]
+    assert request.full_url == "http://localhost:11434/api/chat"
+    payload = json.loads(request.data.decode("utf-8"))
+    assert payload == {
+        "model": "qwen3:4b",
+        "messages": messages,
+        "think": True,
+        "stream": False,
+        "options": {"temperature": 0.4, "num_predict": 512},
+    }
+    assert urlopen.call_args.kwargs["timeout"] == 42
+
+
+def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = b'{"message":{"content":"","thinking":"not a response"}}'
+    provider = OllamaThinkingProvider(base_url="http://localhost:11434", model="qwen3:4b")
+
+    with patch("aura.ai.ollama.urlopen", return_value=response):
+        with pytest.raises(RuntimeError, match="empty response"):
+            provider.generate([{"role": "user", "content": "Hello"}])
+
+
 @pytest.mark.parametrize(
     ("thinking", "expected_model"),
     [(False, "qwen3:4b-instruct"), (True, "qwen3:4b")],
@@ -50,17 +103,27 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
     monkeypatch.setenv("AI_TIMEOUT", "300")
     monkeypatch.setenv("AI_TEMPERATURE", "0.3")
 
-    with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
-        provider = create_provider(thinking=thinking)
-
-    provider_class.assert_called_once_with(
-        api_key="ollama",
-        base_url="http://localhost:11434/v1",
-        model=expected_model,
-        timeout=300.0,
-        temperature=0.3,
-        max_tokens=800,
-    )
+    if thinking:
+        with patch("aura.ai.factory.OllamaThinkingProvider") as provider_class:
+            provider = create_provider(thinking=True)
+        provider_class.assert_called_once_with(
+            base_url="http://localhost:11434",
+            model=expected_model,
+            timeout=300.0,
+            temperature=0.3,
+            max_tokens=800,
+        )
+    else:
+        with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
+            provider = create_provider(thinking=False)
+        provider_class.assert_called_once_with(
+            api_key="ollama",
+            base_url="http://localhost:11434/v1",
+            model=expected_model,
+            timeout=300.0,
+            temperature=0.3,
+            max_tokens=800,
+        )
     assert provider is provider_class.return_value
 
 
@@ -69,12 +132,13 @@ def test_factory_uses_configured_local_model_names(monkeypatch):
     monkeypatch.setenv("OLLAMA_MODEL", "custom-instruct")
     monkeypatch.setenv("OLLAMA_THINKING_MODEL", "custom-thinking")
 
-    with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
+    with patch("aura.ai.factory.OpenAICompatibleProvider") as instruct_class:
         create_provider(thinking=False)
+    with patch("aura.ai.factory.OllamaThinkingProvider") as thinking_class:
         create_provider(thinking=True)
 
-    assert provider_class.call_args_list[0].kwargs["model"] == "custom-instruct"
-    assert provider_class.call_args_list[1].kwargs["model"] == "custom-thinking"
+    assert instruct_class.call_args.kwargs["model"] == "custom-instruct"
+    assert thinking_class.call_args.kwargs["model"] == "custom-thinking"
 
 
 def test_factory_requires_api_key_for_openai(monkeypatch):
