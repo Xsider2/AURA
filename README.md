@@ -55,6 +55,8 @@ AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=qwen3:4b-instruct
 OLLAMA_THINKING_MODEL=qwen3:4b
+AI_MAX_TOKENS=800
+AI_THINKING_MAX_TOKENS=1600
 AI_TIMEOUT=300
 ```
 
@@ -62,7 +64,7 @@ The **Thinking** checkbox selects the model for each request:
 - Off: `OLLAMA_MODEL` (default `qwen3:4b-instruct`) for everyday responses.
 - On: `OLLAMA_THINKING_MODEL` (default `qwen3:4b`) for reasoning tasks.
 
-You can replace either model name with another compatible Ollama model. The timeout can be adjusted with `AI_TIMEOUT` (1-900 seconds; default 300).
+Generation limits are configured independently: `AI_MAX_TOKENS` defaults to 800 for normal mode, while `AI_THINKING_MAX_TOKENS` defaults to 1600 for Thinking mode. Both accept values from 1 to 8192. This gives the reasoning model more room for internal thinking before it produces the final answer. You can replace either model name with another compatible Ollama model. The timeout can be adjusted with `AI_TIMEOUT` (1-900 seconds; default 300).
 
 ### OpenAI API
 
