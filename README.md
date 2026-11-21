@@ -4,7 +4,7 @@ AURA is a personal desktop AI assistant for Windows, built with Python 3.12 and 
 
 ## Current status
 
-The desktop shell includes an assistant panel and a conversation view. Chat requests can be sent to either a local Ollama model or the OpenAI API. The chat interface includes an optional Thinking toggle for supported local Ollama reasoning models. Voice, persistent memory, screen perception and Windows automation are planned for later stages.
+The desktop shell includes an assistant panel and a conversation view. Chat requests can be sent to either a local Ollama model or the OpenAI API. For Ollama, the optional Thinking checkbox selects between a normal instruct model and a separate reasoning-capable model. Voice, persistent memory, screen perception and Windows automation are planned for later stages.
 
 ## Requirements
 
@@ -38,27 +38,31 @@ Copy the example environment file:
 Copy-Item .env.example .env
 ```
 
-### Local model (default)
+### Local models (default)
 
 1. Install and start [Ollama](https://ollama.com/).
-2. Download a model, for example:
+2. Download both models:
 
 ```powershell
-ollama pull llama3.2
+ollama pull qwen3:4b-instruct
+ollama pull qwen3:4b
 ```
 
-3. Keep these settings in `.env`:
+3. Configure `.env`:
 
 ```dotenv
 AI_PROVIDER=ollama
 OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
+OLLAMA_MODEL=qwen3:4b-instruct
+OLLAMA_THINKING_MODEL=qwen3:4b
 AI_TIMEOUT=300
 ```
 
-You can select another model already installed in Ollama by changing `OLLAMA_MODEL`, for example `qwen3:4b`.
+The **Thinking** checkbox selects the model for each request:
+- Off: `OLLAMA_MODEL` (default `qwen3:4b-instruct`) for everyday responses.
+- On: `OLLAMA_THINKING_MODEL` (default `qwen3:4b`) for reasoning tasks.
 
-The **Thinking** checkbox in the chat window enables reasoning for the current request when using a compatible Ollama model. It is off by default for faster everyday replies. Enabling it can increase response time. The timeout can be adjusted with `AI_TIMEOUT` (1-900 seconds; default 300).
+You can replace either model name with another compatible Ollama model. The timeout can be adjusted with `AI_TIMEOUT` (1-900 seconds; default 300).
 
 ### OpenAI API
 
