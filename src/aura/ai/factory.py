@@ -33,6 +33,20 @@ def _generation_settings() -> tuple[float, int]:
     return temperature, max_tokens
 
 
+def _thinking_max_tokens() -> int:
+    """Read and validate the independent token budget for Thinking requests."""
+    try:
+        max_tokens = int(os.getenv("AI_THINKING_MAX_TOKENS", "1600"))
+    except ValueError as exc:
+        raise ValueError(
+            "AI_THINKING_MAX_TOKENS must be an integer between 1 and 8192."
+        ) from exc
+
+    if not 1 <= max_tokens <= 8192:
+        raise ValueError("AI_THINKING_MAX_TOKENS must be between 1 and 8192.")
+    return max_tokens
+
+
 def _request_timeout() -> float:
     """Read and validate the provider request timeout in seconds."""
     try:
@@ -66,7 +80,7 @@ def create_provider(*, thinking: bool = False) -> AIProvider:
                 model=model,
                 timeout=timeout,
                 temperature=temperature,
-                max_tokens=max_tokens,
+                max_tokens=_thinking_max_tokens(),
             )
         return OpenAICompatibleProvider(
             api_key="ollama",
