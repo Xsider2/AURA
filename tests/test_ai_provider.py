@@ -97,6 +97,7 @@ def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
     [(False, "qwen3:4b-instruct"), (True, "qwen3:4b")],
 )
 def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, expected_model):
+    monkeypatch.setattr("aura.ai.factory.load_dotenv", lambda: None)
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/")
     monkeypatch.delenv("OLLAMA_MODEL", raising=False)
@@ -153,6 +154,7 @@ def test_factory_requires_api_key_for_openai(monkeypatch):
 
 
 def test_factory_creates_openai_provider(monkeypatch):
+    monkeypatch.setattr("aura.ai.factory.load_dotenv", lambda: None)
     monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
