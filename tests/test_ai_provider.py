@@ -103,6 +103,7 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
     monkeypatch.delenv("OLLAMA_THINKING_MODEL", raising=False)
     monkeypatch.setenv("AI_TIMEOUT", "300")
     monkeypatch.setenv("AI_TEMPERATURE", "0.3")
+    monkeypatch.delenv("AI_THINKING_MAX_TOKENS", raising=False)
 
     if thinking:
         with patch("aura.ai.factory.OllamaThinkingProvider") as provider_class:
@@ -112,7 +113,7 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
             model=expected_model,
             timeout=300.0,
             temperature=0.3,
-            max_tokens=800,
+            max_tokens=1600,
         )
     else:
         with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
@@ -188,3 +189,32 @@ def test_factory_rejects_unknown_provider(monkeypatch):
 
     with pytest.raises(ValueError, match="Unsupported AI_PROVIDER"):
         create_provider()
+
+
+def test_factory_uses_configured_thinking_token_budget(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("AI_THINKING_MAX_TOKENS", "2048")
+
+    with patch("aura.ai.factory.OllamaThinkingProvider") as provider_class:
+        create_provider(thinking=True)
+
+    assert provider_class.call_args.kwargs["max_tokens"] == 2048
+
+
+def test_factory_rejects_invalid_thinking_token_budget(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("AI_THINKING_MAX_TOKENS", "0")
+
+    with pytest.raises(ValueError, match="AI_THINKING_MAX_TOKENS"):
+        create_provider(thinking=True)
+
+
+def test_factory_does_not_require_thinking_budget_for_normal_mode(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("AI_MAX_TOKENS", "800")
+    monkeypatch.setenv("AI_THINKING_MAX_TOKENS", "invalid")
+
+    with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
+        create_provider(thinking=False)
+
+    assert provider_class.call_args.kwargs["max_tokens"] == 800
