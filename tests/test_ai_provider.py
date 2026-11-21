@@ -48,6 +48,7 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
     monkeypatch.delenv("OLLAMA_MODEL", raising=False)
     monkeypatch.delenv("OLLAMA_THINKING_MODEL", raising=False)
     monkeypatch.setenv("AI_TIMEOUT", "300")
+    monkeypatch.setenv("AI_TEMPERATURE", "0.3")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
         provider = create_provider(thinking=thinking)
@@ -89,6 +90,7 @@ def test_factory_creates_openai_provider(monkeypatch):
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
     monkeypatch.setenv("AI_TIMEOUT", "300")
+    monkeypatch.setenv("AI_TEMPERATURE", "0.3")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
         create_provider()
