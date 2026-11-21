@@ -12,17 +12,9 @@ from aura.ai.openai_compatible import OpenAICompatibleProvider
 def test_openai_compatible_provider_returns_assistant_content():
     client = Mock()
     client.chat.completions.create.return_value = SimpleNamespace(
-        choices=[
-            SimpleNamespace(
-                message=SimpleNamespace(content="  Привет!  "),
-            )
-        ]
+        choices=[SimpleNamespace(message=SimpleNamespace(content="  Привет!  "))]
     )
-    provider = OpenAICompatibleProvider(
-        api_key="test-key",
-        model="test-model",
-        client=client,
-    )
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model", client=client)
 
     result = provider.generate([{"role": "user", "content": "Привет"}])
 
@@ -40,69 +32,48 @@ def test_openai_compatible_provider_rejects_empty_response():
     client.chat.completions.create.return_value = SimpleNamespace(
         choices=[SimpleNamespace(message=SimpleNamespace(content=None))]
     )
-    provider = OpenAICompatibleProvider(
-        api_key="test-key",
-        model="test-model",
-        client=client,
-    )
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model", client=client)
 
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
 
 
-@pytest.mark.parametrize("thinking", [False, True])
-def test_openai_compatible_provider_adds_qwen_thinking_directive(thinking):
-    client = Mock()
-    client.chat.completions.create.return_value = SimpleNamespace(
-        choices=[SimpleNamespace(message=SimpleNamespace(content="Ответ"))]
-    )
-    messages = [
-        {"role": "system", "content": "Ты — AURA."},
-        {"role": "user", "content": "Привет"},
-    ]
-    provider = OpenAICompatibleProvider(
-        api_key="ollama",
-        model="qwen3:4b",
-        thinking=thinking,
-        client=client,
-    )
-
-    provider.generate(messages)
-
-    expected_directive = "/think" if thinking else "/no_think"
-    client.chat.completions.create.assert_called_once_with(
-        model="qwen3:4b",
-        messages=[
-            {"role": "system", "content": "Ты — AURA."},
-            {"role": "user", "content": f"Привет {expected_directive}"},
-        ],
-        temperature=0.7,
-        max_tokens=800,
-    )
-    assert messages[-1]["content"] == "Привет"
-
-
-def test_factory_creates_local_ollama_provider(monkeypatch):
+@pytest.mark.parametrize(
+    ("thinking", "expected_model"),
+    [(False, "qwen3:4b-instruct"), (True, "qwen3:4b")],
+)
+def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, expected_model):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/")
-    monkeypatch.setenv("OLLAMA_MODEL", "qwen2.5")
-    monkeypatch.setenv("AI_TEMPERATURE", "0.4")
-    monkeypatch.setenv("AI_MAX_TOKENS", "1200")
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+    monkeypatch.delenv("OLLAMA_THINKING_MODEL", raising=False)
     monkeypatch.setenv("AI_TIMEOUT", "300")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
-        provider = create_provider()
+        provider = create_provider(thinking=thinking)
 
     provider_class.assert_called_once_with(
         api_key="ollama",
         base_url="http://localhost:11434/v1",
-        model="qwen2.5",
+        model=expected_model,
         timeout=300.0,
-        temperature=0.4,
-        max_tokens=1200,
-        thinking=False,
+        temperature=0.3,
+        max_tokens=800,
     )
     assert provider is provider_class.return_value
+
+
+def test_factory_uses_configured_local_model_names(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "ollama")
+    monkeypatch.setenv("OLLAMA_MODEL", "custom-instruct")
+    monkeypatch.setenv("OLLAMA_THINKING_MODEL", "custom-thinking")
+
+    with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
+        create_provider(thinking=False)
+        create_provider(thinking=True)
+
+    assert provider_class.call_args_list[0].kwargs["model"] == "custom-instruct"
+    assert provider_class.call_args_list[1].kwargs["model"] == "custom-thinking"
 
 
 def test_factory_requires_api_key_for_openai(monkeypatch):
@@ -117,8 +88,6 @@ def test_factory_creates_openai_provider(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
-    monkeypatch.setenv("AI_TEMPERATURE", "0.7")
-    monkeypatch.setenv("AI_MAX_TOKENS", "800")
     monkeypatch.setenv("AI_TIMEOUT", "300")
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
@@ -128,7 +97,7 @@ def test_factory_creates_openai_provider(monkeypatch):
         api_key="test-key",
         model="gpt-test",
         timeout=300.0,
-        temperature=0.7,
+        temperature=0.3,
         max_tokens=800,
     )
 
