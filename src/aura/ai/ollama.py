@@ -51,9 +51,7 @@ class OllamaThinkingProvider:
                 result = json.loads(response.read().decode("utf-8"))
         except HTTPError as exc:
             details = exc.read().decode("utf-8", errors="replace")
-            raise RuntimeError(
-                f"Ollama returned HTTP {exc.code}: {details or exc.reason}"
-            ) from exc
+            raise RuntimeError(f"Ollama returned HTTP {exc.code}: {details or exc.reason}") from exc
         except URLError as exc:
             raise RuntimeError(f"Could not connect to Ollama: {exc.reason}") from exc
         except (UnicodeDecodeError, json.JSONDecodeError) as exc:
