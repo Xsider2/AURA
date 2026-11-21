@@ -7,6 +7,7 @@ import os
 
 from dotenv import load_dotenv
 
+from aura.ai.ollama import OllamaThinkingProvider
 from aura.ai.openai_compatible import OpenAICompatibleProvider
 from aura.ai.provider import AIProvider
 
@@ -45,7 +46,7 @@ def _request_timeout() -> float:
 
 
 def create_provider(*, thinking: bool = False) -> AIProvider:
-    """Create the selected provider; Ollama uses separate instruct and thinking models."""
+    """Create a provider; native Ollama API is used for its Thinking model."""
     load_dotenv()
 
     provider_name = os.getenv("AI_PROVIDER", "ollama").strip().lower()
@@ -59,6 +60,14 @@ def create_provider(*, thinking: bool = False) -> AIProvider:
         model = os.getenv(model_setting, default_model).strip()
         if not model:
             raise ValueError(f"{model_setting} must not be empty.")
+        if thinking:
+            return OllamaThinkingProvider(
+                base_url=base_url,
+                model=model,
+                timeout=timeout,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
         return OpenAICompatibleProvider(
             api_key="ollama",
             base_url=f"{base_url}/v1",
