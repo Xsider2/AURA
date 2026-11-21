@@ -103,6 +103,7 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
     monkeypatch.delenv("OLLAMA_THINKING_MODEL", raising=False)
     monkeypatch.setenv("AI_TIMEOUT", "300")
     monkeypatch.setenv("AI_TEMPERATURE", "0.3")
+    monkeypatch.delenv("AI_MAX_TOKENS", raising=False)
     monkeypatch.delenv("AI_THINKING_MAX_TOKENS", raising=False)
 
     if thinking:
@@ -157,6 +158,7 @@ def test_factory_creates_openai_provider(monkeypatch):
     monkeypatch.setenv("OPENAI_MODEL", "gpt-test")
     monkeypatch.setenv("AI_TIMEOUT", "300")
     monkeypatch.setenv("AI_TEMPERATURE", "0.3")
+    monkeypatch.delenv("AI_MAX_TOKENS", raising=False)
 
     with patch("aura.ai.factory.OpenAICompatibleProvider") as provider_class:
         create_provider()
