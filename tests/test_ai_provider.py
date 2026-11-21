@@ -85,9 +85,11 @@ def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
     response.read.return_value = b'{"message":{"content":"","thinking":"not a response"}}'
     provider = OllamaThinkingProvider(base_url="http://localhost:11434", model="qwen3:4b")
 
-    with patch("aura.ai.ollama.urlopen", return_value=response):
-        with pytest.raises(RuntimeError, match="empty response"):
-            provider.generate([{"role": "user", "content": "Hello"}])
+    with (
+        patch("aura.ai.ollama.urlopen", return_value=response),
+        pytest.raises(RuntimeError, match="empty response"),
+    ):
+        provider.generate([{"role": "user", "content": "Hello"}])
 
 
 @pytest.mark.parametrize(
