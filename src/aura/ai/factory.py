@@ -45,7 +45,7 @@ def _request_timeout() -> float:
 
 
 def create_provider(*, thinking: bool = False) -> AIProvider:
-    """Create the provider selected through the environment configuration."""
+    """Create the selected provider; Ollama uses separate instruct and thinking models."""
     load_dotenv()
 
     provider_name = os.getenv("AI_PROVIDER", "ollama").strip().lower()
@@ -54,14 +54,18 @@ def create_provider(*, thinking: bool = False) -> AIProvider:
 
     if provider_name in {"ollama", "local"}:
         base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").rstrip("/")
+        model_setting = "OLLAMA_THINKING_MODEL" if thinking else "OLLAMA_MODEL"
+        default_model = "qwen3:4b" if thinking else "qwen3:4b-instruct"
+        model = os.getenv(model_setting, default_model).strip()
+        if not model:
+            raise ValueError(f"{model_setting} must not be empty.")
         return OpenAICompatibleProvider(
             api_key="ollama",
             base_url=f"{base_url}/v1",
-            model=os.getenv("OLLAMA_MODEL", "llama3.2"),
+            model=model,
             timeout=timeout,
             temperature=temperature,
             max_tokens=max_tokens,
-            thinking=thinking,
         )
 
     if provider_name == "openai":
