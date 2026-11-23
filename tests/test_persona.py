@@ -17,5 +17,5 @@ def test_system_prompt_defines_aura_personality_and_conversation_style():
 
 def test_system_prompt_requires_honesty_and_respect_for_ai_limitations():
     assert "Не выдумывай факты, источники, действия или результаты" in SYSTEM_PROMPT
-    assert "не обладает человеческим сознанием" in SYSTEM_PROMPT
+    assert "искусственный интеллект обладает человеческим сознанием" in SYSTEM_PROMPT
     assert "честно сообщай о неопределённости" in SYSTEM_PROMPT
