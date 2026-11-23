@@ -38,7 +38,12 @@ class OpenAICompatibleProvider:
             temperature=self.temperature,
             max_tokens=self.max_tokens,
         )
-        content = response.choices[0].message.content
-        if not content:
+        choices = getattr(response, "choices", None)
+        if not choices:
+            raise RuntimeError("AI provider returned an empty response.")
+
+        message = getattr(choices[0], "message", None)
+        content = getattr(message, "content", None)
+        if not isinstance(content, str) or not content.strip():
             raise RuntimeError("AI provider returned an empty response.")
         return content.strip()
