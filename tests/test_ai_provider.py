@@ -222,3 +222,28 @@ def test_factory_does_not_require_thinking_budget_for_normal_mode(monkeypatch):
         create_provider(thinking=False)
 
     assert provider_class.call_args.kwargs["max_tokens"] == 800
+
+
+
+def test_openai_compatible_provider_rejects_whitespace_response():
+    client = Mock()
+    client.chat.completions.create.return_value = SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content="   \n  "))]
+    )
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model", client=client)
+
+    with pytest.raises(RuntimeError, match="empty response"):
+        provider.generate([{"role": "user", "content": "Привет"}])
+
+
+@pytest.mark.parametrize(
+    "response",
+    [SimpleNamespace(choices=[]), SimpleNamespace(choices=[SimpleNamespace(message=None)])],
+)
+def test_openai_compatible_provider_rejects_malformed_response(response):
+    client = Mock()
+    client.chat.completions.create.return_value = response
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model", client=client)
+
+    with pytest.raises(RuntimeError, match="empty response"):
+        provider.generate([{"role": "user", "content": "Привет"}])
