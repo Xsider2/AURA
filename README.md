@@ -80,7 +80,7 @@ Keep the API key private. Never commit `.env` or real credentials.
 
 ## Local conversation history
 
-AURA stores user and assistant messages in a local SQLite database. On Windows, the default location is `%LOCALAPPDATA%\\AURA\\memory.sqlite3` (usually under your Windows user profile). If `LOCALAPPDATA` is unavailable, AURA uses `~/.local/share/AURA/memory.sqlite3`. The database is not committed to the repository or sent to the AI provider as a separate service. Recent messages are restored when AURA starts and included in the conversation context. Use **Очистить историю** in the chat header to permanently delete the saved conversation after confirmation.
+AURA stores user and assistant messages in a local SQLite database. On Windows, the default location is `%LOCALAPPDATA%\\AURA\\memory.sqlite3` (usually under your Windows user profile). If `LOCALAPPDATA` is unavailable, AURA uses `~/.local/share/AURA/memory.sqlite3`. The database file is not committed to the repository or uploaded. The latest 20 saved messages are restored when AURA starts and included in requests to the selected AI provider as conversation context. Use **Очистить историю** in the chat header to permanently delete the saved conversation after confirmation.
 
 ## Run
 
