@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from openai import OpenAI
 
 from aura.ai.provider import ChatMessage
@@ -47,3 +49,32 @@ class OpenAICompatibleProvider:
         if not isinstance(content, str) or not content.strip():
             raise RuntimeError("AI provider returned an empty response.")
         return content.strip()
+
+    def generate_stream(
+        self,
+        messages: list[ChatMessage],
+        on_chunk: Callable[[str], None],
+    ) -> str:
+        """Stream assistant text chunks and return the complete response."""
+        stream = self._client.chat.completions.create(
+            model=self.model,
+            messages=messages,
+            temperature=self.temperature,
+            max_tokens=self.max_tokens,
+            stream=True,
+        )
+        parts: list[str] = []
+        for event in stream:
+            choices = getattr(event, "choices", None)
+            if not choices:
+                continue
+            delta = getattr(choices[0], "delta", None)
+            content = getattr(delta, "content", None)
+            if isinstance(content, str) and content:
+                parts.append(content)
+                on_chunk(content)
+
+        response = "".join(parts).strip()
+        if not response:
+            raise RuntimeError("AI provider returned an empty response.")
+        return response
