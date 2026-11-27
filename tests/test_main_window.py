@@ -112,7 +112,5 @@ def test_streamed_response_is_rendered_incrementally_and_saved_once(qapp, tmp_pa
         "role": "assistant",
         "content": "Поток <безопасный текст>",
     }
-    assert store.load_messages() == [
-        {"role": "assistant", "content": "Поток <безопасный текст>"}
-    ]
+    assert store.load_messages() == [{"role": "assistant", "content": "Поток <безопасный текст>"}]
     window.close()
