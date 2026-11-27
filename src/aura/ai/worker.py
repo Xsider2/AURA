@@ -10,8 +10,9 @@ from aura.ai.provider import ChatMessage
 
 
 class AIWorker(QThread):
-    """Run a provider request outside the GUI thread."""
+    """Run a provider request outside the GUI thread and forward streamed chunks."""
 
+    chunk_received = Signal(str)
     succeeded = Signal(str)
     failed = Signal(str)
 
@@ -22,7 +23,8 @@ class AIWorker(QThread):
 
     def run(self) -> None:
         try:
-            response = create_provider(thinking=self.thinking).generate(self.messages)
+            provider = create_provider(thinking=self.thinking)
+            response = provider.generate_stream(self.messages, self.chunk_received.emit)
         except (OpenAIError, OSError, RuntimeError, ValueError) as exc:
             self.failed.emit(str(exc) or exc.__class__.__name__)
         else:
