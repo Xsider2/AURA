@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMainWindow,
+    QMessageBox,
     QPushButton,
     QSizePolicy,
     QTextBrowser,
@@ -25,21 +26,21 @@ from PySide6.QtWidgets import (
 from aura.ai.persona import SYSTEM_PROMPT
 from aura.ai.provider import ChatMessage
 from aura.ai.worker import AIWorker
+from aura.memory import ConversationStore
 
 
 class MainWindow(QMainWindow):
     """First usable AURA shell: avatar panel, conversation and message input."""
 
-    def __init__(self) -> None:
+    def __init__(self, store: ConversationStore | None = None) -> None:
         super().__init__()
         self.setWindowTitle("AURA — AI Assistant")
         self.resize(1100, 720)
         self.setMinimumSize(820, 560)
+        self._store = store or ConversationStore()
         self._messages: list[ChatMessage] = [
-            {
-                "role": "system",
-                "content": SYSTEM_PROMPT,
-            }
+            {"role": "system", "content": SYSTEM_PROMPT},
+            *self._store.load_messages(limit=20),
         ]
         self._worker: AIWorker | None = None
         self._build_ui()
@@ -100,16 +101,17 @@ class MainWindow(QMainWindow):
         self.connection_label = QLabel("Локальный интерфейс")
         self.connection_label.setObjectName("connection")
         header.addWidget(self.connection_label)
+        self.clear_history_button = QPushButton("Очистить историю")
+        self.clear_history_button.setObjectName("clearHistoryButton")
+        self.clear_history_button.clicked.connect(self.clear_history)
+        header.addWidget(self.clear_history_button)
         conversation_layout.addLayout(header)
 
         self.chat = QTextBrowser()
         self.chat.setObjectName("chat")
         self.chat.setOpenExternalLinks(False)
         self.chat.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.chat.setHtml(
-            "<div><b>AURA</b><br>Привет! Я AURA. Сейчас мы настраиваем мой интерфейс. "
-            "Напиши сообщение, чтобы проверить отправку.</div>"
-        )
+        self._restore_chat()
         conversation_layout.addWidget(self.chat)
 
         input_row = QHBoxLayout()
@@ -166,6 +168,11 @@ class MainWindow(QMainWindow):
                 padding: 13px; color: #f2f4fb; selection-background-color: #5369b4;
             }
             QLineEdit#messageInput:focus { border: 1px solid #8297ed; }
+            QPushButton#clearHistoryButton {
+                background: transparent; color: #aebeff; border: 1px solid #34415e;
+                border-radius: 8px; padding: 6px 10px;
+            }
+            QPushButton#clearHistoryButton:hover { background: #202c45; }
             QPushButton#sendButton {
                 background: #687fe0; color: white; border: none; border-radius: 10px;
                 padding: 0 20px; font-weight: 600; min-height: 42px;
@@ -193,6 +200,7 @@ class MainWindow(QMainWindow):
         self.connection_label.setText("ИИ обрабатывает запрос…")
 
         self._messages.append({"role": "user", "content": message})
+        self._store.add_message("user", message)
         request_messages = [self._messages[0], *self._messages[1:][-20:]]
         self._worker = AIWorker(request_messages, thinking=self.thinking_toggle.isChecked())
         self._worker.succeeded.connect(self._handle_response)
@@ -208,6 +216,50 @@ class MainWindow(QMainWindow):
             f'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>{safe_response}</div>'
         )
         self._messages.append({"role": "assistant", "content": response})
+        self._store.add_message("assistant", response)
+
+    def _restore_chat(self) -> None:
+        """Render saved conversation messages when the application starts."""
+        saved_messages = self._messages[1:]
+        if not saved_messages:
+            self.chat.setHtml(
+                "<div><b>AURA</b><br>Привет! Я AURA. Напиши сообщение, чтобы начать диалог.</div>"
+            )
+            return
+
+        self.chat.clear()
+        for message in saved_messages:
+            self._append_chat_message(message["role"], message["content"])
+
+    def _append_chat_message(self, role: str, content: str) -> None:
+        """Append an escaped user or assistant message to the transcript."""
+        safe_content = html.escape(content).replace("\n", "<br>")
+        if role == "user":
+            background, color, label = "#202c45", "#aebeff", "Ты"
+        else:
+            background, color, label = "#19283a", "#8fd9b5", "AURA"
+        self.chat.append(
+            f'<div style="margin: 12px 0; padding: 10px; background: {background}; '
+            f'border-radius: 9px;"><b style="color: {color};">{label}</b><br>{safe_content}</div>'
+        )
+
+    def clear_history(self) -> None:
+        """Ask before permanently deleting the locally saved conversation."""
+        answer = QMessageBox.question(
+            self,
+            "Очистить историю",
+            "Удалить всю сохранённую историю диалога? Это действие нельзя отменить.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+
+        self._store.clear()
+        self._messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+        self.chat.setHtml(
+            "<div><b>AURA</b><br>История очищена. Можем начать новый диалог.</div>"
+        )
 
     def _handle_error(self, error: str) -> None:
         """Show a readable error without terminating the application."""
