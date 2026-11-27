@@ -6,6 +6,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from aura.ai.worker import AIWorker
 from aura.ai.factory import create_provider
 from aura.ai.ollama import OllamaThinkingProvider
 from aura.ai.openai_compatible import OpenAICompatibleProvider
@@ -325,3 +326,40 @@ def test_openai_compatible_provider_rejects_malformed_response(response):
 
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
+
+
+def test_ai_worker_forwards_stream_chunks_and_final_response():
+    provider = Mock()
+    provider.generate_stream.side_effect = lambda messages, callback: (
+        callback("Hello"),
+        callback(" world"),
+        "Hello world",
+    )[2]
+    chunks = []
+    completed = []
+    errors = []
+
+    with patch("aura.ai.worker.create_provider", return_value=provider):
+        worker = AIWorker([{"role": "user", "content": "Hi"}])
+        worker.chunk_received.connect(chunks.append)
+        worker.succeeded.connect(completed.append)
+        worker.failed.connect(errors.append)
+        worker.run()
+
+    assert chunks == ["Hello", " world"]
+    assert completed == ["Hello world"]
+    assert errors == []
+    provider.generate_stream.assert_called_once()
+
+
+def test_ai_worker_reports_streaming_errors():
+    provider = Mock()
+    provider.generate_stream.side_effect = RuntimeError("stream interrupted")
+    errors = []
+
+    with patch("aura.ai.worker.create_provider", return_value=provider):
+        worker = AIWorker([{"role": "user", "content": "Hi"}])
+        worker.failed.connect(errors.append)
+        worker.run()
+
+    assert errors == ["stream interrupted"]
