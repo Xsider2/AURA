@@ -11,6 +11,7 @@ from aura.ai.ollama import OllamaThinkingProvider
 from aura.ai.openai_compatible import OpenAICompatibleProvider
 from aura.ai.worker import AIWorker
 
+
 def test_openai_compatible_provider_returns_assistant_content():
     client = Mock()
     client.chat.completions.create.return_value = SimpleNamespace(
@@ -28,6 +29,7 @@ def test_openai_compatible_provider_returns_assistant_content():
         max_tokens=800,
     )
 
+
 def test_openai_compatible_provider_rejects_empty_response():
     client = Mock()
     client.chat.completions.create.return_value = SimpleNamespace(
@@ -37,6 +39,7 @@ def test_openai_compatible_provider_rejects_empty_response():
 
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
+
 
 def test_openai_compatible_provider_streams_text_chunks():
     client = Mock()
@@ -63,6 +66,7 @@ def test_openai_compatible_provider_streams_text_chunks():
         stream=True,
     )
 
+
 def test_openai_compatible_provider_rejects_empty_stream():
     client = Mock()
     client.chat.completions.create.return_value = []
@@ -70,6 +74,7 @@ def test_openai_compatible_provider_rejects_empty_stream():
 
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate_stream([{"role": "user", "content": "Привет"}], lambda _: None)
+
 
 def test_ollama_thinking_provider_streams_only_final_content():
     response = Mock()
@@ -100,6 +105,7 @@ def test_ollama_thinking_provider_streams_only_final_content():
     assert payload["think"] is True
     assert payload["stream"] is True
 
+
 def test_ollama_thinking_provider_rejects_empty_stream():
     response = Mock()
     response.__enter__ = Mock(return_value=response)
@@ -114,6 +120,7 @@ def test_ollama_thinking_provider_rejects_empty_stream():
         pytest.raises(RuntimeError, match="empty response"),
     ):
         provider.generate_stream([{"role": "user", "content": "Hello"}], lambda _: None)
+
 
 def test_ollama_thinking_provider_returns_content_not_reasoning():
     response = Mock()
@@ -152,6 +159,7 @@ def test_ollama_thinking_provider_returns_content_not_reasoning():
     }
     assert urlopen.call_args.kwargs["timeout"] == 42
 
+
 def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
     response = Mock()
     response.__enter__ = Mock(return_value=response)
@@ -165,10 +173,12 @@ def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
     ):
         provider.generate([{"role": "user", "content": "Hello"}])
 
+
 @pytest.mark.parametrize(
     ("thinking", "expected_model"),
     [(False, "qwen3:4b-instruct"), (True, "qwen3:4b")],
 )
+
 def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, expected_model):
     monkeypatch.setattr("aura.ai.factory.load_dotenv", lambda: None)
     monkeypatch.setenv("AI_PROVIDER", "ollama")
@@ -203,6 +213,7 @@ def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, ex
         )
     assert provider is provider_class.return_value
 
+
 def test_factory_uses_configured_local_model_names(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("OLLAMA_MODEL", "custom-instruct")
@@ -216,12 +227,14 @@ def test_factory_uses_configured_local_model_names(monkeypatch):
     assert instruct_class.call_args.kwargs["model"] == "custom-instruct"
     assert thinking_class.call_args.kwargs["model"] == "custom-thinking"
 
+
 def test_factory_requires_api_key_for_openai(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "openai")
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     with pytest.raises(ValueError, match="OPENAI_API_KEY"):
         create_provider()
+
 
 def test_factory_creates_openai_provider(monkeypatch):
     monkeypatch.setattr("aura.ai.factory.load_dotenv", lambda: None)
@@ -243,6 +256,7 @@ def test_factory_creates_openai_provider(monkeypatch):
         max_tokens=800,
     )
 
+
 def test_factory_rejects_invalid_generation_settings(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("AI_TEMPERATURE", "2.5")
@@ -256,11 +270,13 @@ def test_factory_rejects_invalid_generation_settings(monkeypatch):
     with pytest.raises(ValueError, match="AI_MAX_TOKENS"):
         create_provider()
 
+
 def test_factory_rejects_unknown_provider(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "unknown")
 
     with pytest.raises(ValueError, match="Unsupported AI_PROVIDER"):
         create_provider()
+
 
 def test_factory_uses_configured_thinking_token_budget(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
@@ -271,12 +287,14 @@ def test_factory_uses_configured_thinking_token_budget(monkeypatch):
 
     assert provider_class.call_args.kwargs["max_tokens"] == 2048
 
+
 def test_factory_rejects_invalid_thinking_token_budget(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
     monkeypatch.setenv("AI_THINKING_MAX_TOKENS", "0")
 
     with pytest.raises(ValueError, match="AI_THINKING_MAX_TOKENS"):
         create_provider(thinking=True)
+
 
 def test_factory_does_not_require_thinking_budget_for_normal_mode(monkeypatch):
     monkeypatch.setenv("AI_PROVIDER", "ollama")
@@ -288,6 +306,7 @@ def test_factory_does_not_require_thinking_budget_for_normal_mode(monkeypatch):
 
     assert provider_class.call_args.kwargs["max_tokens"] == 800
 
+
 def test_openai_compatible_provider_rejects_whitespace_response():
     client = Mock()
     client.chat.completions.create.return_value = SimpleNamespace(
@@ -298,10 +317,12 @@ def test_openai_compatible_provider_rejects_whitespace_response():
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
 
+
 @pytest.mark.parametrize(
     "response",
     [SimpleNamespace(choices=[]), SimpleNamespace(choices=[SimpleNamespace(message=None)])],
 )
+
 def test_openai_compatible_provider_rejects_malformed_response(response):
     client = Mock()
     client.chat.completions.create.return_value = response
@@ -309,6 +330,7 @@ def test_openai_compatible_provider_rejects_malformed_response(response):
 
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
+
 
 def test_ai_worker_forwards_stream_chunks_and_final_response():
     provider = Mock()
@@ -332,6 +354,7 @@ def test_ai_worker_forwards_stream_chunks_and_final_response():
     assert completed == ["Hello world"]
     assert errors == []
     provider.generate_stream.assert_called_once()
+
 
 def test_ai_worker_reports_streaming_errors():
     provider = Mock()
