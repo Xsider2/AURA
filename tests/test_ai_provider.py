@@ -6,10 +6,10 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from aura.ai.worker import AIWorker
 from aura.ai.factory import create_provider
 from aura.ai.ollama import OllamaThinkingProvider
 from aura.ai.openai_compatible import OpenAICompatibleProvider
+from aura.ai.worker import AIWorker
 
 
 def test_openai_compatible_provider_returns_assistant_content():
@@ -111,7 +111,9 @@ def test_ollama_thinking_provider_rejects_empty_stream():
     response = Mock()
     response.__enter__ = Mock(return_value=response)
     response.__exit__ = Mock(return_value=False)
-    response.__iter__ = Mock(return_value=iter([b'{"message":{"thinking":"private"},"done":true}\n']))
+    response.__iter__ = Mock(
+        return_value=iter([b'{"message":{"thinking":"private"},"done":true}\n'])
+    )
     provider = OllamaThinkingProvider(base_url="http://localhost:11434", model="qwen3:4b")
 
     with (
@@ -119,6 +121,7 @@ def test_ollama_thinking_provider_rejects_empty_stream():
         pytest.raises(RuntimeError, match="empty response"),
     ):
         provider.generate_stream([{"role": "user", "content": "Hello"}], lambda _: None)
+
 
 def test_ollama_thinking_provider_returns_content_not_reasoning():
     response = Mock()
