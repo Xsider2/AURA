@@ -8,8 +8,6 @@ from pathlib import Path
 
 from aura.ai.provider import ChatMessage
 
-_MAX_HISTORY_MESSAGES = 20
-
 
 def default_database_path() -> Path:
     """Return the per-user application data path without requiring extra packages."""
