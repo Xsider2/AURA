@@ -257,9 +257,7 @@ class MainWindow(QMainWindow):
 
         self._store.clear()
         self._messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-        self.chat.setHtml(
-            "<div><b>AURA</b><br>История очищена. Можем начать новый диалог.</div>"
-        )
+        self.chat.setHtml("<div><b>AURA</b><br>История очищена. Можем начать новый диалог.</div>")
 
     def _handle_error(self, error: str) -> None:
         """Show a readable error without terminating the application."""
