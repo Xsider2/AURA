@@ -72,9 +72,11 @@ def test_default_database_path_uses_local_app_data(monkeypatch, tmp_path):
 def test_database_does_not_accept_empty_content_at_sql_level(tmp_path):
     store = ConversationStore(tmp_path / "aura.sqlite3")
 
-    with pytest.raises(sqlite3.IntegrityError):
-        with sqlite3.connect(store.database_path) as connection:
-            connection.execute(
-                "INSERT INTO conversation_messages (role, content) VALUES (?, ?)",
-                ("user", "   "),
-            )
+    with (
+        pytest.raises(sqlite3.IntegrityError),
+        sqlite3.connect(store.database_path) as connection,
+    ):
+        connection.execute(
+            "INSERT INTO conversation_messages (role, content) VALUES (?, ?)",
+            ("user", "   "),
+        )
