@@ -224,7 +224,6 @@ def test_factory_does_not_require_thinking_budget_for_normal_mode(monkeypatch):
     assert provider_class.call_args.kwargs["max_tokens"] == 800
 
 
-
 def test_openai_compatible_provider_rejects_whitespace_response():
     client = Mock()
     client.chat.completions.create.return_value = SimpleNamespace(
