@@ -178,7 +178,6 @@ def test_ollama_thinking_provider_rejects_empty_content_even_with_reasoning():
     ("thinking", "expected_model"),
     [(False, "qwen3:4b-instruct"), (True, "qwen3:4b")],
 )
-
 def test_factory_selects_local_model_for_thinking_mode(monkeypatch, thinking, expected_model):
     monkeypatch.setattr("aura.ai.factory.load_dotenv", lambda: None)
     monkeypatch.setenv("AI_PROVIDER", "ollama")
@@ -322,7 +321,6 @@ def test_openai_compatible_provider_rejects_whitespace_response():
     "response",
     [SimpleNamespace(choices=[]), SimpleNamespace(choices=[SimpleNamespace(message=None)])],
 )
-
 def test_openai_compatible_provider_rejects_malformed_response(response):
     client = Mock()
     client.chat.completions.create.return_value = response
