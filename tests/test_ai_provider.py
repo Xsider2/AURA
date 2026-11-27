@@ -40,8 +40,6 @@ def test_openai_compatible_provider_rejects_empty_response():
     with pytest.raises(RuntimeError, match="empty response"):
         provider.generate([{"role": "user", "content": "Привет"}])
 
-
-
 def test_openai_compatible_provider_streams_text_chunks():
     client = Mock()
     client.chat.completions.create.return_value = [
