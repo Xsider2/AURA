@@ -40,6 +40,85 @@ def test_openai_compatible_provider_rejects_empty_response():
         provider.generate([{"role": "user", "content": "Привет"}])
 
 
+
+def test_openai_compatible_provider_streams_text_chunks():
+    client = Mock()
+    client.chat.completions.create.return_value = [
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="Привет"))]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content="!"))]),
+        SimpleNamespace(choices=[SimpleNamespace(delta=SimpleNamespace(content=None))]),
+    ]
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model", client=client)
+    chunks = []
+
+    result = provider.generate_stream(
+        [{"role": "user", "content": "Привет"}],
+        chunks.append,
+    )
+
+    assert result == "Привет!"
+    assert chunks == ["Привет", "!"]
+    client.chat.completions.create.assert_called_once_with(
+        model="test-model",
+        messages=[{"role": "user", "content": "Привет"}],
+        temperature=0.7,
+        max_tokens=800,
+        stream=True,
+    )
+
+
+def test_openai_compatible_provider_rejects_empty_stream():
+    client = Mock()
+    client.chat.completions.create.return_value = []
+    provider = OpenAICompatibleProvider(api_key="test-key", model="test-model")
+
+    with pytest.raises(RuntimeError, match="empty response"):
+        provider.generate_stream([{"role": "user", "content": "Привет"}], lambda _: None)
+
+
+def test_ollama_thinking_provider_streams_only_final_content():
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.__iter__ = Mock(
+        return_value=iter(
+            [
+                b'{"message":{"thinking":"private thought","content":""},"done":false}\n',
+                b'{"message":{"thinking":"","content":"Final "},"done":false}\n',
+                b'{"message":{"thinking":"","content":"answer"},"done":true}\n',
+            ]
+        )
+    )
+    provider = OllamaThinkingProvider(base_url="http://localhost:11434", model="qwen3:4b")
+    chunks = []
+
+    with patch("aura.ai.ollama.urlopen", return_value=response) as urlopen:
+        result = provider.generate_stream(
+            [{"role": "user", "content": "Hello"}],
+            chunks.append,
+        )
+
+    assert result == "Final answer"
+    assert chunks == ["Final ", "answer"]
+    request = urlopen.call_args.args[0]
+    payload = json.loads(request.data.decode("utf-8"))
+    assert payload["think"] is True
+    assert payload["stream"] is True
+
+
+def test_ollama_thinking_provider_rejects_empty_stream():
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.__iter__ = Mock(return_value=iter([b'{"message":{"thinking":"private"},"done":true}\n']))
+    provider = OllamaThinkingProvider(base_url="http://localhost:11434", model="qwen3:4b")
+
+    with (
+        patch("aura.ai.ollama.urlopen", return_value=response),
+        pytest.raises(RuntimeError, match="empty response"),
+    ):
+        provider.generate_stream([{"role": "user", "content": "Hello"}], lambda _: None)
+
 def test_ollama_thinking_provider_returns_content_not_reasoning():
     response = Mock()
     response.__enter__ = Mock(return_value=response)
