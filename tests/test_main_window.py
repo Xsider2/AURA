@@ -94,3 +94,25 @@ def test_clear_history_requires_confirmation_and_deletes_messages(qapp, tmp_path
     assert len(window._messages) == 1
     assert "История очищена" in window.chat.toPlainText()
     window.close()
+
+
+def test_streamed_response_is_rendered_incrementally_and_saved_once(qapp, tmp_path):
+    store = ConversationStore(tmp_path / "aura.sqlite3")
+    window = MainWindow(store)
+
+    window._handle_chunk("Поток ")
+    assert "Поток" in window.chat.toPlainText()
+    assert store.load_messages() == []
+
+    window._handle_chunk("<безопасный текст>")
+    window._handle_response("Поток <безопасный текст>")
+
+    assert "<безопасный текст>" in window.chat.toPlainText()
+    assert window._messages[-1] == {
+        "role": "assistant",
+        "content": "Поток <безопасный текст>",
+    }
+    assert store.load_messages() == [
+        {"role": "assistant", "content": "Поток <безопасный текст>"}
+    ]
+    window.close()
