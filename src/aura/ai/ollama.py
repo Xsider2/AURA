@@ -81,7 +81,9 @@ class OllamaThinkingProvider:
                     try:
                         event = json.loads(line)
                     except json.JSONDecodeError as exc:
-                        raise RuntimeError("Ollama returned an invalid streaming response.") from exc
+                        raise RuntimeError(
+                            "Ollama returned an invalid streaming response."
+                        ) from exc
 
                     if event.get("error"):
                         raise RuntimeError(f"Ollama error: {event['error']}")
