@@ -4,7 +4,7 @@ AURA is a personal desktop AI assistant for Windows, built with Python 3.12 and 
 
 ## Current status
 
-The desktop shell includes an assistant panel and a conversation view. Chat requests can be sent to either a local Ollama model or the OpenAI API. For Ollama, the optional Thinking checkbox selects between a normal instruct model and a separate reasoning-capable model. Voice, persistent memory, screen perception and Windows automation are planned for later stages.
+The desktop shell includes an assistant panel and a conversation view. Chat requests can be sent to either a local Ollama model or the OpenAI API. For Ollama, the optional Thinking checkbox selects between a normal instruct model and a separate reasoning-capable model. Conversation history is persisted locally in SQLite and restored on startup. Voice, semantic user memory, screen perception and Windows automation are planned for later stages.
 
 ## Requirements
 
@@ -77,6 +77,10 @@ OPENAI_MODEL=gpt-4o-mini
 ```
 
 Keep the API key private. Never commit `.env` or real credentials.
+
+## Local conversation history
+
+AURA stores user and assistant messages in a local SQLite database. On Windows, the default location is `%LOCALAPPDATA%\\AURA\\memory.sqlite3` (usually under your Windows user profile). If `LOCALAPPDATA` is unavailable, AURA uses `~/.local/share/AURA/memory.sqlite3`. The database is not committed to the repository or sent to the AI provider as a separate service. Recent messages are restored when AURA starts and included in the conversation context. Use **Очистить историю** in the chat header to permanently delete the saved conversation after confirmation.
 
 ## Run
 
