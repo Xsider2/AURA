@@ -6,7 +6,7 @@ import html
 import sys
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QFont
+from PySide6.QtGui import QFont, QTextBlockFormat, QTextCursor
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -43,6 +43,7 @@ class MainWindow(QMainWindow):
             *self._store.load_messages(limit=20),
         ]
         self._worker: AIWorker | None = None
+        self._stream_started = False
         self._build_ui()
 
     def _build_ui(self) -> None:
@@ -188,33 +189,51 @@ class MainWindow(QMainWindow):
         if not message or (self._worker is not None and self._worker.isRunning()):
             return
 
-        safe_message = html.escape(message).replace("\\n", "<br>")
-        self.chat.append(
-            f'<div style="margin: 12px 0; padding: 10px; background: #202c45; '
-            f'border-radius: 9px;"><b style="color: #aebeff;">Ты</b><br>{safe_message}</div>'
-        )
+        self._append_chat_message("user", message)
         self.message_input.clear()
         self.message_input.setEnabled(False)
         self.send_button.setEnabled(False)
         self.thinking_toggle.setEnabled(False)
-        self.connection_label.setText("ИИ обрабатывает запрос…")
+        self.connection_label.setText("ИИ генерирует ответ…")
 
         self._messages.append({"role": "user", "content": message})
         self._store.add_message("user", message)
         request_messages = [self._messages[0], *self._messages[1:][-20:]]
+        self._stream_started = False
         self._worker = AIWorker(request_messages, thinking=self.thinking_toggle.isChecked())
+        self._worker.chunk_received.connect(self._handle_chunk)
         self._worker.succeeded.connect(self._handle_response)
         self._worker.failed.connect(self._handle_error)
         self._worker.finished.connect(self._worker_finished)
         self._worker.start()
 
+    def _handle_chunk(self, chunk: str) -> None:
+        """Append a newly generated text fragment to the active assistant bubble."""
+        if not chunk:
+            return
+        if not self._stream_started:
+            self._stream_started = True
+            block = QTextBlockFormat()
+            block.setBackground(Qt.GlobalColor.transparent)
+            block.setTopMargin(12)
+            block.setBottomMargin(12)
+            block.setLeftMargin(10)
+            block.setRightMargin(10)
+            cursor = self.chat.textCursor()
+            cursor.movePosition(QTextCursor.MoveOperation.End)
+            cursor.insertBlock(block)
+            cursor.insertHtml('<b style="color: #8fd9b5;">AURA</b><br>')
+        cursor = self.chat.textCursor()
+        cursor.movePosition(QTextCursor.MoveOperation.End)
+        cursor.insertText(chunk)
+        self.chat.setTextCursor(cursor)
+        self.chat.ensureCursorVisible()
+        self.connection_label.setText("AURA печатает…")
+
     def _handle_response(self, response: str) -> None:
-        """Display and retain a successful assistant response."""
-        safe_response = html.escape(response).replace("\\n", "<br>")
-        self.chat.append(
-            f'<div style="margin: 12px 0; padding: 10px; background: #19283a; '
-            f'border-radius: 9px;"><b style="color: #8fd9b5;">AURA</b><br>{safe_response}</div>'
-        )
+        """Persist the completed assistant response without duplicating streamed text."""
+        if not self._stream_started:
+            self._append_chat_message("assistant", response)
         self._messages.append({"role": "assistant", "content": response})
         self._store.add_message("assistant", response)
 
@@ -233,7 +252,7 @@ class MainWindow(QMainWindow):
 
     def _append_chat_message(self, role: str, content: str) -> None:
         """Append an escaped user or assistant message to the transcript."""
-        safe_content = html.escape(content).replace("\n", "<br>")
+        safe_content = html.escape(content).replace("\\n", "<br>")
         if role == "user":
             background, color, label = "#202c45", "#aebeff", "Ты"
         else:
@@ -277,6 +296,7 @@ class MainWindow(QMainWindow):
             self.connection_label.setText("ИИ готов")
         self.message_input.setFocus()
         self._worker = None
+        self._stream_started = False
 
 
 def main() -> int:
